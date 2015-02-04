@@ -248,6 +248,9 @@ class BWCircularSlider: UIControl {
     //Sourcecode from Apple example clockControl
     //Calculate the direction in degrees from a center point to an arbitrary position.
     func AngleFromNorth(p1:CGPoint , p2:CGPoint , flipped:Bool) -> Double {
+        if(p1 == p2){
+            return 0;
+        }
         var v:CGPoint  = CGPointMake(p2.x - p1.x, p2.y - p1.y)
         let vmag:CGFloat = Square(Square(v.x) + Square(v.y))
         var result:Double = 0.0
