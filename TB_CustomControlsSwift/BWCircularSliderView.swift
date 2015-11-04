@@ -40,6 +40,6 @@ import UIKit
     
     func valueChanged(slider:BWCircularSlider){
         // Do something with the value...
-        println("Value changed \(slider.angle)")
+        print("Value changed \(slider.angle)")
     }
 }
