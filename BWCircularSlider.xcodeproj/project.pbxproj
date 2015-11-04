@@ -132,6 +132,8 @@
 		DAEB2FA61A0827EE002EE5EF /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
+				LastSwiftMigration = 0700;
+				LastSwiftUpdateCheck = 0700;
 				LastUpgradeCheck = 0600;
 				ORGANIZATIONNAME = "Yari D'areglia";
 				TargetAttributes = {
