@@ -18,7 +18,7 @@ struct Config {
 }
 
 
-// MARK: Math Helpers 
+// MARK: Math Helpers
 
 func DegreesToRadians (value:Double) -> Double {
     return value * M_PI / 180.0
@@ -36,7 +36,7 @@ func Square (value:CGFloat) -> CGFloat {
 // MARK: Circular Slider
 
 class BWCircularSlider: UIControl {
-
+    
     var textField:UITextField?
     var radius:CGFloat = 0
     var angle:Int = 360
@@ -82,20 +82,20 @@ class BWCircularSlider: UIControl {
         
         addSubview(textField!)
     }
-
+    
     required init(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
     
     
-    override func beginTrackingWithTouch(touch: UITouch, withEvent event: UIEvent) -> Bool {
+    override func beginTrackingWithTouch(touch: UITouch, withEvent event: UIEvent?) -> Bool {
         super.beginTrackingWithTouch(touch, withEvent: event)
         
         return true
     }
     
     
-    override func continueTrackingWithTouch(touch: UITouch, withEvent event: UIEvent) -> Bool {
+    override func continueTrackingWithTouch(touch: UITouch, withEvent event: UIEvent?) -> Bool {
         super.continueTrackingWithTouch(touch, withEvent: event)
         
         let lastPoint = touch.locationInView(self)
@@ -107,7 +107,7 @@ class BWCircularSlider: UIControl {
         return true
     }
     
-    override func endTrackingWithTouch(touch: UITouch, withEvent event: UIEvent) {
+    override func endTrackingWithTouch(touch: UITouch?, withEvent event: UIEvent?) {
         super.endTrackingWithTouch(touch, withEvent: event)
     }
     
@@ -115,7 +115,7 @@ class BWCircularSlider: UIControl {
     
     
     //Use the draw rect to draw the Background, the Circle and the Handle
-    override func drawRect(rect: CGRect){
+    override func drawRect(rect: CGRect) {
         super.drawRect(rect)
         
         let ctx = UIGraphicsGetCurrentContext()
@@ -127,9 +127,9 @@ class BWCircularSlider: UIControl {
         UIColor(red: 0.0, green: 0.0, blue: 0.0, alpha: 1.0).set()
         
         CGContextSetLineWidth(ctx, 72)
-        CGContextSetLineCap(ctx, kCGLineCapButt)
+        CGContextSetLineCap(ctx, .Butt)
         
-        CGContextDrawPath(ctx, kCGPathStroke)
+        CGContextDrawPath(ctx, .Stroke)
         
         
         /** Draw the circle **/
@@ -142,13 +142,13 @@ class BWCircularSlider: UIControl {
         
         //Use shadow to create the Blur effect
         CGContextSetShadowWithColor(imageCtx, CGSizeMake(0, 0), CGFloat(self.angle/15), UIColor.blackColor().CGColor);
-       
+        
         //define the path
         CGContextSetLineWidth(imageCtx, Config.TB_LINE_WIDTH)
-        CGContextDrawPath(imageCtx, kCGPathStroke)
+        CGContextDrawPath(imageCtx, .Stroke)
         
         //save the context content into the image mask
-        var mask:CGImageRef = CGBitmapContextCreateImage(UIGraphicsGetCurrentContext());
+        let mask = CGBitmapContextCreateImage(UIGraphicsGetCurrentContext());
         UIGraphicsEndImageContext();
         
         /** Clip Context to the mask **/
@@ -162,7 +162,7 @@ class BWCircularSlider: UIControl {
         // Split colors in components (rgba)
         let startColorComps:UnsafePointer<CGFloat> = CGColorGetComponents(startColor.CGColor);
         let endColorComps:UnsafePointer<CGFloat> = CGColorGetComponents(endColor.CGColor);
-
+        
         let components : [CGFloat] = [
             startColorComps[0], startColorComps[1], startColorComps[2], 1.0,     // Start color
             endColorComps[0], endColorComps[1], endColorComps[2], 1.0      // End color
@@ -171,25 +171,25 @@ class BWCircularSlider: UIControl {
         // Setup the gradient
         let baseSpace = CGColorSpaceCreateDeviceRGB()
         let gradient = CGGradientCreateWithColorComponents(baseSpace, components, nil, 2)
-
+        
         // Gradient direction
         let startPoint = CGPointMake(CGRectGetMidX(rect), CGRectGetMinY(rect))
         let endPoint = CGPointMake(CGRectGetMidX(rect), CGRectGetMaxY(rect))
         
         // Draw the gradient
-        CGContextDrawLinearGradient(ctx, gradient, startPoint, endPoint, 0);
+        CGContextDrawLinearGradient(ctx, gradient, startPoint, endPoint, .DrawsBeforeStartLocation);
         CGContextRestoreGState(ctx);
         
         /* Draw the handle */
         drawTheHandle(ctx)
-
+        
     }
     
     
     
     /** Draw a white knob over the circle **/
     
-    func drawTheHandle(ctx:CGContextRef){
+    func drawTheHandle(ctx:CGContextRef?) {
         
         CGContextSaveGState(ctx);
         
@@ -197,8 +197,8 @@ class BWCircularSlider: UIControl {
         CGContextSetShadowWithColor(ctx, CGSizeMake(0, 0), 3, UIColor.blackColor().CGColor);
         
         //Get the handle position
-        var handleCenter = pointFromAngle(angle)
-
+        let handleCenter = pointFromAngle(angle)
+        
         //Draw It!
         UIColor(white:1.0, alpha:0.7).set();
         CGContextFillEllipseInRect(ctx, CGRectMake(handleCenter.x, handleCenter.y, Config.TB_LINE_WIDTH, Config.TB_LINE_WIDTH));
@@ -209,7 +209,7 @@ class BWCircularSlider: UIControl {
     
     
     /** Move the Handle **/
-
+    
     func moveHandle(lastPoint:CGPoint){
         
         //Get the center
@@ -217,10 +217,10 @@ class BWCircularSlider: UIControl {
         //Calculate the direction from a center point and a arbitrary position.
         let currentAngle:Double = AngleFromNorth(centerPoint, p2: lastPoint, flipped: false);
         let angleInt = Int(floor(currentAngle))
-
+        
         //Store the new angle
         angle = Int(360 - angleInt)
-
+        
         //Update the textfield
         textField!.text = "\(angle)"
         
@@ -230,17 +230,17 @@ class BWCircularSlider: UIControl {
     
     /** Given the angle, get the point position on circumference **/
     func pointFromAngle(angleInt:Int)->CGPoint{
-    
+        
         //Circle center
         let centerPoint = CGPointMake(self.frame.size.width/2.0 - Config.TB_LINE_WIDTH/2.0, self.frame.size.height/2.0 - Config.TB_LINE_WIDTH/2.0);
-
+        
         //The point position on the circumference
         var result:CGPoint = CGPointZero
         let y = round(Double(radius) * sin(DegreesToRadians(Double(-angleInt)))) + Double(centerPoint.y)
         let x = round(Double(radius) * cos(DegreesToRadians(Double(-angleInt)))) + Double(centerPoint.x)
         result.y = CGFloat(y)
         result.x = CGFloat(x)
-            
+        
         return result;
     }
     
@@ -257,5 +257,5 @@ class BWCircularSlider: UIControl {
         result = RadiansToDegrees(radians)
         return (result >= 0  ? result : result + 360.0);
     }
-
+    
 }
