@@ -9,12 +9,10 @@
 import UIKit
 
 struct Config {
-    
     static let TB_SLIDER_SIZE:CGFloat = UIScreen.main.bounds.size.width
     static let TB_SAFEAREA_PADDING:CGFloat = 60.0
     static let TB_LINE_WIDTH:CGFloat = 40.0
     static let TB_FONTSIZE:CGFloat = 40.0
-    
 }
 
 
@@ -37,7 +35,7 @@ func Square (_ value:CGFloat) -> CGFloat {
 
 class BWCircularSlider: UIControl {
 
-    var textField:UITextField?
+    var textField:UITextField = UITextField()
     var radius:CGFloat = 0
     var angle:Int = 360
     var startColor = UIColor.blue
@@ -59,7 +57,7 @@ class BWCircularSlider: UIControl {
         self.isOpaque = true
         
         //Define the circle radius taking into account the safe area
-        radius = self.frame.size.width/2 - Config.TB_SAFEAREA_PADDING
+        radius = self.frame.size.width / 2 - Config.TB_SAFEAREA_PADDING
         
         //Define the Font
         let font = UIFont(name: "Avenir", size: Config.TB_FONTSIZE)
@@ -73,14 +71,14 @@ class BWCircularSlider: UIControl {
             y: (frame.size.height - fontSize.height) / 2.0,
             width: fontSize.width, height: fontSize.height);
         
-        textField = UITextField(frame: textFieldRect)
-        textField?.backgroundColor = UIColor.clear
-        textField?.textColor = UIColor(white: 1.0, alpha: 0.8)
-        textField?.textAlignment = .center
-        textField?.font = font
-        textField?.text = "\(self.angle)"
+        textField.frame = textFieldRect
+        textField.backgroundColor = UIColor.clear
+        textField.textColor = UIColor(white: 1.0, alpha: 0.8)
+        textField.textAlignment = .center
+        textField.font = font
+        textField.text = "\(self.angle)"
         
-        addSubview(textField!)
+        addSubview(textField)
     }
 
     required init(coder aDecoder: NSCoder) {
@@ -99,9 +97,7 @@ class BWCircularSlider: UIControl {
         super.continueTracking(touch, with: event)
         
         let lastPoint = touch.location(in: self)
-        
         self.moveHandle(lastPoint)
-        
         self.sendActions(for: UIControlEvents.valueChanged)
         
         return true
@@ -118,70 +114,94 @@ class BWCircularSlider: UIControl {
     override func draw(_ rect: CGRect){
         super.draw(rect)
         
-        let ctx = UIGraphicsGetCurrentContext()
-        
+        guard let ctx = UIGraphicsGetCurrentContext() else {
+            print(#function, "Couldn't get context")
+            return
+        }
         
         /** Draw the Background **/
         
-        CGContextAddArc(ctx, CGFloat(self.frame.size.width / 2.0), CGFloat(self.frame.size.height / 2.0), radius, 0, CGFloat(M_PI * 2), 0)
+        let center = CGPoint(x: bounds.midX, y: bounds.midY)
+        let pi2 = CGFloat(M_PI * 2)
+        ctx.addArc(center: center, radius: radius, startAngle: 0, endAngle: pi2, clockwise: false)
+        
         UIColor(red: 0.0, green: 0.0, blue: 0.0, alpha: 1.0).set()
         
-        ctx?.setLineWidth(72)
-        ctx?.setLineCap(kCALineCapButt)
-        
-        ctx.drawPath(using: kCGPathStroke)
-        
+        ctx.setLineWidth(Config.TB_LINE_WIDTH * 2)
+        ctx.setLineCap(.butt)
+        ctx.drawPath(using: .stroke)
         
         /** Draw the circle **/
         
         /** Create THE MASK Image **/
-        UIGraphicsBeginImageContext(CGSize(width: self.bounds.size.width,height: self.bounds.size.height));
-        let imageCtx = UIGraphicsGetCurrentContext()
-        CGContextAddArc(imageCtx, CGFloat(self.frame.size.width/2)  , CGFloat(self.frame.size.height/2), radius, 0, CGFloat(DegreesToRadians(Double(angle))) , 0);
-        UIColor.red.set()
+        
+        // FIXME: ???
+        UIGraphicsBeginImageContext(CGSize(width: self.bounds.size.width, height: self.bounds.size.height));
+        
+        guard let imageCtx = UIGraphicsGetCurrentContext() else {
+            print(#function, #line, "Couldn't get image context")
+            return
+        }
+        
+        let endAngle = CGFloat(DegreesToRadians(Double(angle)))
+        imageCtx.addArc(center: center, radius: radius, startAngle: 0, endAngle: endAngle, clockwise: false)
+        
+        UIColor.yellow.set()
         
         //Use shadow to create the Blur effect
-        imageCtx?.setShadow(offset: CGSize(width: 0, height: 0), blur: CGFloat(self.angle/15), color: UIColor.black.cgColor);
+        imageCtx.setShadow(offset: CGSize(width: 0, height: 0), blur: CGFloat(self.angle/15), color: UIColor.black.cgColor);
        
         //define the path
-        imageCtx?.setLineWidth(Config.TB_LINE_WIDTH)
-        imageCtx.drawPath(using: kCGPathStroke)
+        imageCtx.setLineWidth(Config.TB_LINE_WIDTH)
+        imageCtx.setLineCap(.round)
+        imageCtx.drawPath(using: .stroke)
         
-        //save the context content into the image mask
-        var mask:CGImage = UIGraphicsGetCurrentContext()!.makeImage()!;
+        // save the context content into the image mask
+        let mask:CGImage = UIGraphicsGetCurrentContext()!.makeImage()!;
         UIGraphicsEndImageContext();
         
         /** Clip Context to the mask **/
-        ctx?.saveGState()
+        ctx.saveGState()
         
-        ctx?.clip(to: self.bounds, mask: mask)
+        ctx.clip(to: self.bounds, mask: mask)
         
         
         /** The Gradient **/
         
         // Split colors in components (rgba)
-        let startColorComps:UnsafePointer<CGFloat> = startColor.cgColor.components;
-        let endColorComps:UnsafePointer<CGFloat> = endColor.cgColor.components;
+        guard let startColorComps = startColor.cgColor.components else {
+            print(#function, #line, "Couldn't get start color components")
+            return
+        }
+        
+        
+        guard let endColorComps = endColor.cgColor.components else {
+            print(#function, #line, "Couldn't get end color components")
+            return
+        }
 
         let components : [CGFloat] = [
-            startColorComps[0], startColorComps[1], startColorComps[2], 1.0,     // Start color
-            endColorComps[0], endColorComps[1], endColorComps[2], 1.0      // End color
+            startColorComps[0], startColorComps[1], startColorComps[2], 1.0,    // Start color
+            endColorComps[0], endColorComps[1], endColorComps[2], 1.0           // End color
         ]
         
         // Setup the gradient
         let baseSpace = CGColorSpaceCreateDeviceRGB()
-        let gradient = CGGradient(colorSpace: baseSpace, colorComponents: components, locations: nil, count: 2)
+        guard let gradient = CGGradient(colorSpace: baseSpace, colorComponents: components, locations: nil, count: 2) else {
+            print(#function, #line, "Couldn't make gradient?")
+            return
+        }
 
         // Gradient direction
         let startPoint = CGPoint(x: rect.midX, y: rect.minY)
         let endPoint = CGPoint(x: rect.midX, y: rect.maxY)
         
         // Draw the gradient
-        ctx?.drawLinearGradient(gradient!, start: startPoint, end: endPoint, options: CGGradientDrawingOptions(rawValue: 0));
-        ctx?.restoreGState();
+        ctx.drawLinearGradient(gradient, start: startPoint, end: endPoint, options: CGGradientDrawingOptions(rawValue: 0));
+        ctx.restoreGState();
         
         /* Draw the handle */
-        drawTheHandle(ctx!)
+        drawTheHandle(ctx)
 
     }
     
@@ -222,7 +242,7 @@ class BWCircularSlider: UIControl {
         angle = Int(360 - angleInt)
 
         //Update the textfield
-        textField!.text = "\(angle)"
+        textField.text = "\(angle)"
         
         //Redraw
         setNeedsDisplay()
