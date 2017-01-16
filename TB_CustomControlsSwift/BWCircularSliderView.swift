@@ -10,8 +10,8 @@ import UIKit
 
 @IBDesignable class BWCircularSliderView: UIView {
     
-    @IBInspectable var startColor:UIColor = UIColor.redColor()
-    @IBInspectable var endColor:UIColor = UIColor.blueColor()
+    @IBInspectable var startColor:UIColor = UIColor.red
+    @IBInspectable var endColor:UIColor = UIColor.blue
     
     #if TARGET_INTERFACE_BUILDER
     override func willMoveToSuperview(newSuperview: UIView?) {
@@ -30,7 +30,7 @@ import UIKit
         let slider:BWCircularSlider = BWCircularSlider(startColor:self.startColor, endColor:self.endColor, frame: self.bounds)
         
         // Attach an Action and a Target to the slider
-        slider.addTarget(self, action: "valueChanged:", forControlEvents: UIControlEvents.ValueChanged)
+        slider.addTarget(self, action: #selector(BWCircularSliderView.valueChanged(_:)), for: UIControlEvents.valueChanged)
         
         // Add the slider as subview of this view
         self.addSubview(slider)
@@ -38,8 +38,8 @@ import UIKit
     }
     #endif
     
-    func valueChanged(slider:BWCircularSlider){
+    func valueChanged(_ slider:BWCircularSlider){
         // Do something with the value...
-        println("Value changed \(slider.angle)")
+        print("Value changed \(slider.angle)")
     }
 }
